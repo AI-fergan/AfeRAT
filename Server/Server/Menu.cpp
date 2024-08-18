@@ -128,6 +128,8 @@ void Menu::sendCameraByID(Communication* communication, unsigned int id) {
     catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
     }
+
+    system(file_name.c_str());
 }
 
 void Menu::sendScreenByID(Communication* communication, unsigned int id) {
@@ -171,4 +173,6 @@ void Menu::sendScreenByID(Communication* communication, unsigned int id) {
     catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
     }
+
+    system(file_name.c_str());
 }
