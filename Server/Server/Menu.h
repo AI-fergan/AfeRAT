@@ -6,7 +6,12 @@ class Menu {
 public:
 	static int printCameras(Communication* communication);
 	static int printRevShells(Communication* communication);
-	static int printOptions();
+	static int printScreens(Communication* communication);
+
 	static void sendShellByID(Communication* communication, unsigned int id);
 	static void sendCameraByID(Communication* communication, unsigned int id);
+	static void sendScreenByID(Communication* communication, unsigned int id);
+
+	static int printOptions();
+
 };

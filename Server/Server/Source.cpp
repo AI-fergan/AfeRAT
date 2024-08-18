@@ -3,7 +3,7 @@
 
 int main() {
 	unsigned int id;
-	Communication* communication = new Communication(4444, 3333);
+	Communication* communication = new Communication(4444, 3333, 2222);
     thread server(&Communication::acceptClients, communication);
 	server.detach();
 	while (true) {
@@ -27,6 +27,15 @@ int main() {
 			cout << "id: ";
 			cin >> id;
 			Menu::sendCameraByID(communication, id);
+			break;
+		case 3:
+			if (!Menu::printScreens(communication)) {
+				cout << "screen not found." << endl;
+				break;
+			}
+			cout << "id: ";
+			cin >> id;
+			Menu::sendScreenByID(communication, id);
 			break;
 		case 0:
 			cout << "Bye !" << endl;

